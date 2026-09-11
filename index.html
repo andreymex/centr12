@@ -1,0 +1,2177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+    <title>Центровка валов — PRO + 3D</title>
+
+    <!-- Three.js Library & OrbitControls -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        body {
+            background: #f0f4fb;
+            display: flex;
+            justify-content: center;
+            padding: 12px 8px;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.dark {
+            background: #0b1424;
+            color: #e2e8f0;
+        }
+        .container {
+            max-width: 1480px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            padding: 16px 14px 24px;
+            box-shadow: 0 20px 60px rgba(0, 20, 40, 0.08);
+            border: 1px solid rgba(200, 215, 235, 0.5);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        body.dark .container {
+            background: #172237;
+            border-color: #2d3f5a;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+        .header h1 {
+            font-size: 20px;
+            font-weight: 600;
+            color: #0b1e33;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        body.dark .header h1 {
+            color: #e2e8f0;
+        }
+        .header h1 small {
+            font-size: 12px;
+            font-weight: 400;
+            color: #4f6f8f;
+            background: #eef4fa;
+            padding: 2px 12px;
+            border-radius: 40px;
+        }
+        body.dark .header h1 small {
+            color: #8aa3c9;
+            background: #253448;
+        }
+        .header-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .btn {
+            padding: 8px 16px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            border: none;
+            transition: 0.15s;
+            touch-action: manipulation;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+        .btn:active { transform: scale(0.95); }
+        .btn-danger {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #dc2626;
+        }
+        body.dark .btn-danger {
+            background: #3b1f1f;
+            border-color: #7f3a3a;
+            color: #f87171;
+        }
+        .btn-theme {
+            background: #e2e8f0;
+            border: 1px solid #cbd5e1;
+            color: #1e293b;
+        }
+        body.dark .btn-theme {
+            background: #2d3f5a;
+            border-color: #4a5f7a;
+            color: #e2e8f0;
+        }
+        .btn-action {
+            background: #3b82f6;
+            color: #ffffff;
+            border: 1px solid #2563eb;
+        }
+        .btn-action:hover { background: #2563eb; }
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #334155;
+            border: 1px solid #cbd5e1;
+        }
+        body.dark .btn-secondary {
+            background: #253448;
+            color: #cbd5e1;
+            border-color: #3a506e;
+        }
+        .btn-secondary.active {
+            background: #3b82f6;
+            color: #ffffff;
+            border-color: #2563eb;
+        }
+        .status-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 16px;
+            background: #f7faff;
+            padding: 10px 16px;
+            border-radius: 16px;
+            border: 1px solid #e2ecf7;
+            margin-bottom: 16px;
+            align-items: center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .status-bar {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #1a3a5a;
+        }
+        body.dark .status-item {
+            color: #b8c9e5;
+        }
+        .badge {
+            display: inline-block;
+            padding: 2px 12px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-red { background: #fee2e2; color: #dc2626; }
+        .badge-blue { background: #dbeafe; color: #1a4a7a; }
+        .badge-yellow { background: #fef3c7; color: #92400e; }
+        body.dark .badge-green { background: #1a3a2a; color: #6ee7b7; }
+        body.dark .badge-red { background: #3b1f1f; color: #f87171; }
+        body.dark .badge-blue { background: #1a2a4a; color: #93b5f0; }
+        body.dark .badge-yellow { background: #3b2a1a; color: #fbbf24; }
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .status-indicator.green { background: #22c55e; }
+        .status-indicator.red { background: #ef4444; }
+        .status-indicator.yellow { background: #eab308; }
+
+        .accordion {
+            background: #f7faff;
+            border-radius: 16px;
+            border: 1px solid #e3eefa;
+            margin-bottom: 16px;
+            overflow: hidden;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .accordion {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .accordion-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 18px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #0b2a44;
+            font-size: 15px;
+            background: #fafdff;
+            user-select: none;
+            transition: background 0.3s, color 0.3s;
+        }
+        body.dark .accordion-header {
+            color: #e2e8f0;
+            background: #1f2e42;
+        }
+        .accordion-header:hover { background: #f0f5fe; }
+        body.dark .accordion-header:hover { background: #2a3d55; }
+        .accordion-header .arrow { transition: transform 0.25s; font-size: 18px; }
+        .accordion.open .accordion-header .arrow { transform: rotate(180deg); }
+        .accordion-body {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 18px;
+            background: #ffffff;
+        }
+        body.dark .accordion-body {
+            background: #172237;
+        }
+        .accordion.open .accordion-body {
+            max-height: 800px;
+            padding: 0 18px 18px 18px;
+        }
+        .accordion-body ol {
+            padding-left: 20px;
+            font-size: 13px;
+            line-height: 1.8;
+            color: #1a2a3a;
+            columns: 1;
+        }
+        body.dark .accordion-body ol {
+            color: #c8d6e8;
+        }
+        @media (min-width: 600px) {
+            .accordion-body ol { columns: 2 280px; }
+        }
+
+        .params-top {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 12px;
+            background: #f7faff;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin-bottom: 16px;
+            border: 1px solid #e2ecf7;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .params-top {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .params-top .group {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .params-top label {
+            font-weight: 500;
+            color: #1e3a5f;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+        body.dark .params-top label {
+            color: #b0c4e5;
+        }
+        .params-top input, .params-top select {
+            padding: 6px 8px;
+            border: 1px solid #d0dfee;
+            border-radius: 30px;
+            font-size: 13px;
+            background: white;
+            width: 56px;
+            text-align: center;
+            font-weight: 500;
+            color: #0b2a44;
+            min-height: 36px;
+            transition: background 0.3s, border-color 0.3s, color 0.3s;
+        }
+        body.dark .params-top input,
+        body.dark .params-top select {
+            background: #0f1a2b;
+            border-color: #3a506e;
+            color: #e2e8f0;
+        }
+        .params-top select {
+            width: auto;
+            padding: 6px 14px 6px 10px;
+            min-height: 36px;
+            font-size: 12px;
+        }
+        #rpmInput { width: 72px; }
+
+        .tolerance-card {
+            background: #fafdff;
+            border-radius: 16px;
+            padding: 12px 14px 16px;
+            border: 1px solid #e3eefa;
+            margin-bottom: 16px;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .tolerance-card {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .tolerance-card .title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #0b2a44;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        body.dark .tolerance-card .title {
+            color: #e2e8f0;
+        }
+        .tolerance-card .value-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 0;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f4fb;
+        }
+        body.dark .tolerance-card .value-row {
+            border-bottom-color: #2d3f5a;
+        }
+        .tolerance-card .value-row:last-child { border-bottom: none; }
+        .tolerance-card .value-row .label { color: #4f6f8f; }
+        body.dark .tolerance-card .value-row .label { color: #8aa3c9; }
+        .tolerance-card .value-row .value { font-weight: 600; color: #0b2a44; }
+        body.dark .tolerance-card .value-row .value { color: #e2e8f0; }
+        .tolerance-card .value-row .value.danger { color: #dc2626; }
+        body.dark .tolerance-card .value-row .value.danger { color: #f87171; }
+        .tolerance-card .value-row .value.success { color: #22c55e; }
+        body.dark .tolerance-card .value-row .value.success { color: #6ee7b7; }
+        .tolerance-card .value-row .value.warning { color: #eab308; }
+        body.dark .tolerance-card .value-row .value.warning { color: #fbbf24; }
+        .tolerance-visual {
+            width: 100%;
+            height: 12px;
+            background: #e5e7eb;
+            border-radius: 6px;
+            overflow: hidden;
+            margin: 4px 0;
+            position: relative;
+        }
+        body.dark .tolerance-visual {
+            background: #2d3f5a;
+        }
+        .tolerance-visual .fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+        .tolerance-visual .fill.green { background: #22c55e; }
+        .tolerance-visual .fill.yellow { background: #eab308; }
+        .tolerance-visual .fill.red { background: #ef4444; }
+        .tolerance-visual .marker {
+            position: absolute;
+            top: -2px;
+            width: 2px;
+            height: 16px;
+            background: #1e293b;
+            border-radius: 1px;
+        }
+        body.dark .tolerance-visual .marker {
+            background: #e2e8f0;
+        }
+
+        .indicators-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .indicator-card {
+            background: #fafdff;
+            border-radius: 16px;
+            padding: 10px 12px 14px;
+            border: 1px solid #e3eefa;
+            text-align: center;
+            position: relative;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .indicator-card {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .indicator-card .title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0b2a44;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        body.dark .indicator-card .title {
+            color: #e2e8f0;
+        }
+        .indicator-card .title .status-badge {
+            font-size: 11px;
+            padding: 1px 10px;
+            border-radius: 40px;
+            font-weight: 500;
+        }
+        .indicator-card .caption {
+            font-size: 11px;
+            color: #5f7d9c;
+            margin-top: 4px;
+            background: #f2f7fe;
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 40px;
+        }
+        body.dark .indicator-card .caption {
+            color: #8aa3c9;
+            background: #253448;
+        }
+        .indicator-wrapper {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+        }
+        .indicator-card svg {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            touch-action: none;
+        }
+        .indicator-card svg circle[fill="none"],
+        .indicator-card svg circle:not(.clickable-point) {
+            stroke: #d0dfee;
+        }
+        .indicator-card svg line {
+            stroke: #3b82f6;
+        }
+        .indicator-card svg text {
+            fill: #1e293b;
+        }
+        .indicator-card svg .indicator-value-bg {
+            fill: rgba(255,255,255,0.92);
+        }
+        .indicator-card svg .indicator-value {
+            fill: #1a4a7a;
+            stroke: rgba(255,255,255,0.95);
+            stroke-width: 4;
+            paint-order: stroke;
+            dominant-baseline: central;
+            text-anchor: middle;
+            pointer-events: none;
+            user-select: none;
+            font-weight: 700;
+        }
+        .indicator-card svg .indicator-value.ax-val { fill: #2563eb; }
+        .indicator-card svg .indicator-value.rad-val { fill: #7c3aed; }
+        .indicator-card svg .delta-on-svg {
+            font-size: 12px;
+            font-weight: 600;
+            fill: #1a4a7a;
+            stroke: rgba(255,255,255,0.9);
+            stroke-width: 3;
+            paint-order: stroke;
+            dominant-baseline: central;
+            text-anchor: middle;
+            pointer-events: none;
+            user-select: none;
+        }
+        .indicator-card svg .delta-on-svg.ax-delta { fill: #2563eb; }
+        .indicator-card svg .delta-on-svg.rad-delta { fill: #7c3aed; }
+        .indicator-card svg .hint-text {
+            fill: #5f7d9c;
+            font-size: 11px;
+            text-anchor: middle;
+        }
+        body.dark .indicator-card svg circle[fill="none"],
+        body.dark .indicator-card svg circle:not(.clickable-point) {
+            stroke: #3a506e;
+        }
+        body.dark .indicator-card svg line { stroke: #5a7a9a; }
+        body.dark .indicator-card svg text { fill: #b8c9e5; }
+        body.dark .indicator-card svg .indicator-value-bg {
+            fill: rgba(23, 34, 55, 0.92);
+        }
+        body.dark .indicator-card svg .indicator-value {
+            fill: #93b5f0;
+            stroke: rgba(23, 34, 55, 0.95);
+            stroke-width: 4;
+            paint-order: stroke;
+        }
+        body.dark .indicator-card svg .indicator-value.ax-val { fill: #6b9cf0; }
+        body.dark .indicator-card svg .indicator-value.rad-val { fill: #a78bfa; }
+        body.dark .indicator-card svg .delta-on-svg {
+            fill: #b8c9e5;
+            stroke: rgba(23, 34, 55, 0.9);
+            stroke-width: 3;
+            paint-order: stroke;
+        }
+        body.dark .indicator-card svg .delta-on-svg.ax-delta { fill: #6b9cf0; }
+        body.dark .indicator-card svg .delta-on-svg.rad-delta { fill: #a78bfa; }
+        body.dark .indicator-card svg .hint-text { fill: #8aa3c9; }
+        .clickable-point {
+            cursor: pointer;
+            transition: r 0.15s, fill 0.15s, stroke 0.15s;
+            touch-action: manipulation;
+        }
+        .clickable-point:active {
+            r: 11;
+            fill: #dc2626;
+            stroke: #dc2626;
+            stroke-width: 3;
+        }
+        .clickable-point.active-point {
+            r: 11;
+            fill: #dc2626;
+            stroke: #dc2626;
+            stroke-width: 3;
+            filter: drop-shadow(0 0 6px rgba(220,38,38,0.3));
+        }
+        body.dark .clickable-point {
+            fill: #4a7ab5;
+            stroke: #4a7ab5;
+        }
+        body.dark .clickable-point.active-point {
+            fill: #f87171;
+            stroke: #f87171;
+        }
+        .point-input {
+            position: absolute;
+            background: white;
+            border: 2px solid #3b82f6;
+            border-radius: 40px;
+            padding: 6px 10px;
+            width: 80px;
+            font-size: 16px;
+            font-weight: 500;
+            text-align: center;
+            box-shadow: 0 8px 24px rgba(0, 20, 40, 0.25);
+            display: none;
+            z-index: 120;
+            outline: none;
+            color: #0b2a44;
+            min-height: 40px;
+        }
+        body.dark .point-input {
+            background: #0f1a2b;
+            border-color: #5a7a9a;
+            color: #e2e8f0;
+        }
+        .point-input:focus {
+            border-color: #dc2626;
+            box-shadow: 0 0 0 4px rgba(220,38,38,0.15);
+        }
+
+        /* ============ 3D VISUALIZER SECTION ============ */
+        .visualizer-card {
+            background: #fafdff;
+            border-radius: 16px;
+            padding: 14px;
+            border: 1px solid #e3eefa;
+            margin-bottom: 16px;
+            transition: background 0.3s, border-color 0.3s;
+            position: relative;
+        }
+        body.dark .visualizer-card {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .visualizer-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        .visualizer-header h2 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0b2a44;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        body.dark .visualizer-header h2 { color: #e2e8f0; }
+        .visualizer-toolbar {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .visualizer-toolbar .btn-sm {
+            padding: 5px 12px;
+            font-size: 12px;
+            min-height: 32px;
+            border-radius: 20px;
+        }
+        .three-container-wrapper {
+            position: relative;
+            width: 100%;
+            height: 420px;
+            border-radius: 12px;
+            overflow: hidden;
+            background: #eef4fc;
+            border: 1px solid #d0dfee;
+            touch-action: none;
+        }
+        body.dark .three-container-wrapper {
+            background: #0f1a2b;
+            border-color: #2a3d5a;
+        }
+        #threeCanvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: grab;
+        }
+        #threeCanvas:active { cursor: grabbing; }
+        .three-overlay {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.88);
+            backdrop-filter: blur(8px);
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 12px;
+            color: #0b2a44;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            border: 1px solid rgba(200, 215, 235, 0.8);
+            pointer-events: none;
+            max-width: 280px;
+            z-index: 10;
+        }
+        body.dark .three-overlay {
+            background: rgba(15, 26, 43, 0.88);
+            color: #e2e8f0;
+            border-color: rgba(45, 63, 90, 0.8);
+        }
+        .three-overlay .stat-line {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+        .three-overlay .stat-line:last-child { margin-bottom: 0; }
+        .three-overlay .stat-val { font-weight: 700; }
+        .three-overlay .stat-val.pos { color: #16a34a; }
+        .three-overlay .stat-val.neg { color: #dc2626; }
+        body.dark .three-overlay .stat-val.pos { color: #4ade80; }
+        body.dark .three-overlay .stat-val.neg { color: #f87171; }
+
+        .scale-control-bar {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 10px;
+            padding: 8px 12px;
+            background: #f0f5fe;
+            border-radius: 12px;
+            font-size: 13px;
+            flex-wrap: wrap;
+        }
+        body.dark .scale-control-bar { background: #172436; }
+        .scale-control-bar label {
+            font-weight: 600;
+            color: #1e3a5f;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        body.dark .scale-control-bar label { color: #b0c4e5; }
+        .scale-slider {
+            flex: 1;
+            min-width: 120px;
+            height: 6px;
+            border-radius: 3px;
+            accent-color: #3b82f6;
+            cursor: pointer;
+        }
+        .scale-val {
+            font-weight: 700;
+            color: #2563eb;
+            min-width: 45px;
+            text-align: right;
+        }
+        body.dark .scale-val { color: #60a5fa; }
+
+        .schemes-row {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+        .scheme-card {
+            background: #fafdff;
+            border-radius: 16px;
+            padding: 10px 10px 50px;
+            border: 1px solid #e3eefa;
+            text-align: center;
+            transition: background 0.3s, border-color 0.3s;
+        }
+        body.dark .scheme-card {
+            background: #1f2e42;
+            border-color: #2d3f5a;
+        }
+        .scheme-card .title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #0b2a44;
+            margin-bottom: 4px;
+        }
+        body.dark .scheme-card .title { color: #e2e8f0; }
+        .scheme-card .subtitle {
+            font-size: 12px;
+            color: #4f6f8f;
+            margin-bottom: 6px;
+            background: #f0f5fe;
+            display: inline-block;
+            padding: 2px 14px;
+            border-radius: 40px;
+        }
+        body.dark .scheme-card .subtitle {
+            color: #8aa3c9;
+            background: #253448;
+        }
+
+        .scheme-card .image-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%;
+            margin: 40px auto 30px;
+            overflow: visible;
+        }
+        .scheme-card .image-container img {
+            width: 50%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+            border-radius: 12px;
+            background: #f0f4fb;
+        }
+        body.dark .scheme-card .image-container img {
+            filter: brightness(0.85);
+        }
+
+        .corr-arrow, .corr-label {
+            position: absolute;
+            pointer-events: none;
+            font-weight: 700;
+            text-shadow: none;
+        }
+        .corr-arrow { font-size: 28px; }
+        .corr-label { font-size: 16px; font-weight: 600; }
+        .corr-arrow.vert, .corr-label.vert { color: #dc2626; }
+        .corr-arrow.horiz, .corr-label.horiz { color: #7c3aed; }
+
+        .action-hint {
+            font-size: 13px;
+            color: #4f6f8f;
+            margin-top: 20px;
+            padding: 4px 12px;
+            background: #f7faff;
+            border-radius: 40px;
+            display: inline-block;
+            position: relative;
+            z-index: 5;
+        }
+        body.dark .action-hint {
+            color: #b0c4e5;
+            background: #253448;
+        }
+
+        #variantImageContainer {
+            text-align: center;
+            margin: 10px 0 16px;
+        }
+        #variantImageContainer img {
+            max-width: 100%;
+            border-radius: 12px;
+            border: 1px solid #e2ecf7;
+            max-height: 400px;
+        }
+        body.dark #variantImageContainer img {
+            border-color: #2d3f5a;
+            filter: brightness(0.85);
+        }
+
+        @media (min-width: 600px) {
+            .indicators-row { grid-template-columns: 1fr 1fr; }
+            .schemes-row { grid-template-columns: 1fr 1fr; }
+        }
+        @media (min-width: 900px) {
+            body { padding: 24px 16px; }
+            .container { padding: 28px 32px 36px; }
+            .header h1 { font-size: 26px; }
+            .btn { min-height: auto; }
+        }
+        @media (max-width: 400px) {
+            .params-top .group { width: 100%; justify-content: space-between; }
+            .params-top input { width: 48px; font-size: 12px; min-height: 32px; }
+            .btn { font-size: 12px; padding: 6px 12px; min-height: 36px; }
+            #rpmInput { width: 64px; }
+            .corr-arrow { font-size: 22px; }
+            .corr-label { font-size: 13px; }
+            .scheme-card .image-container img { width: 70%; }
+            .scheme-card { padding: 10px 10px 40px; }
+            .scheme-card .image-container { margin: 30px auto 20px; }
+            .action-hint { margin-top: 15px; }
+            .three-container-wrapper { height: 320px; }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1e293b;
+            color: #f8fafc;
+            padding: 12px 28px;
+            border-radius: 60px;
+            font-weight: 500;
+            font-size: 14px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            opacity: 0;
+            transition: all 0.4s ease;
+            pointer-events: none;
+            z-index: 200;
+            max-width: 90%;
+            text-align: center;
+        }
+        .toast.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        body.dark .toast {
+            background: #2d3f5a;
+            color: #e2e8f0;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <!-- HEADER -->
+    <div class="header">
+        <h1>⚙️ Центровка валов <small>PRO + 3D</small>
+            <span class="status-item" id="overallStatus">
+                <span class="status-indicator green" id="statusDot"></span>
+                <span id="statusText">OK</span>
+            </span>
+        </h1>
+        <div class="header-actions">
+            <button class="btn btn-theme" onclick="toggleTheme()">🌙 Ночной режим</button>
+        </div>
+    </div>
+
+    <!-- СТАТУСНАЯ ПАНЕЛЬ -->
+    <div class="status-bar">
+        <span class="status-item">📊 Состояние: <span id="statusState" class="badge badge-green">В норме</span></span>
+        <span class="status-item">📏 Отклонение: <span id="maxDeviation">0.00</span> мм</span>
+        <span class="status-item">⏱️ <span id="currentTime">--:--</span></span>
+    </div>
+
+    <!-- ИНСТРУКЦИЯ -->
+    <div class="accordion" id="instructionAccordion">
+        <div class="accordion-header" onclick="toggleAccordion()">
+            <span>📖 Пошаговая инструкция</span>
+            <span class="arrow">▼</span>
+        </div>
+        <div class="accordion-body">
+            <ol>
+                <li>Установить электродвигатель на опоры.</li>
+                <li>Проверить отсутствие провисания лап эл. двигателя.</li>
+                <li>Проверить прогрев и затяжку болтов (шпилек) консоли.</li>
+                <li>Измерить муфту и расстояние между полумуфтами.</li>
+                <li>Занести данные R (радиус, на котором производится измерение), a (расстояние от осевого индикатора до передней лапы), b (расстояние от передней лапы до задней лапы) в мм, тип муфты, вариант приспособлений для центровки (отличается в установке радиального индикатора) и обороты двигателя.</li>
+                <li>Поворачивая вал на 0°, 90°, 180°, 270°, занести показания индикаторов (клик по точкам на индикаторе).</li>
+                <li>Оценить положение в 3D визуализаторе и выполнить рекомендуемые действия (стрелки на 3D-модели и на схемах).</li>
+                <li>Повторно провести измерения и при необходимости выполнить пункты 6–8.</li>
+            </ol>
+        </div>
+    </div>
+
+    <!-- ПАРАМЕТРЫ + КНОПКА СБРОСА -->
+    <div class="params-top">
+        <div class="group"><label>R (радиус)</label><input type="number" id="paramR" value="140" step="1"></div>
+        <div class="group"><label>a</label><input type="number" id="paramA" value="520" step="1"></div>
+        <div class="group"><label>b</label><input type="number" id="paramB" value="420" step="1"></div>
+        <div class="group"><label>Тип</label>
+            <select id="couplingType">
+                <option value="1">Упругая</option>
+                <option value="2">Зубчатая</option>
+                <option value="3" selected>Жёсткая</option>
+            </select>
+        </div>
+        <div class="group"><label>Приспособление</label>
+            <select id="fixtureVariant">
+                <option value="1">Стандарт</option>
+                <option value="2">Альтернатива</option>
+            </select>
+        </div>
+        <div class="group"><label>об/мин</label><input type="number" id="rpmInput" value="2950" step="10"></div>
+        <div class="group">
+            <button class="btn btn-danger" onclick="resetAll()" style="padding: 6px 16px; min-height: 36px;">⟳ Сброс</button>
+        </div>
+    </div>
+
+    <!-- КАРТИНКА ВАРИАНТА ПРИСПОСОБЛЕНИЯ -->
+    <div id="variantImageContainer">
+        <img id="variantImage" src="" alt="Схема приспособления" style="max-width:100%; border-radius:12px; border:1px solid #e2ecf7;">
+    </div>
+
+    <!-- ИНДИКАТОРЫ -->
+    <div class="indicators-row">
+        <div class="indicator-card">
+            <div class="title">📏 Осевой индикатор (перекос) <span>Ax</span>
+                <span class="status-badge badge-green" id="axStatus">OK</span>
+            </div>
+            <div class="indicator-wrapper" id="axWrapper">
+                <svg width="280" height="260" viewBox="0 0 280 260">
+                    <circle cx="140" cy="115" r="85" fill="none" stroke="#d0dfee" stroke-width="2.5" stroke-dasharray="5 5"/>
+                    <circle cx="140" cy="115" r="4" fill="#1e293b"/>
+                    <line x1="140" y1="30" x2="140" y2="50" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="132" y="24" font-size="14" fill="#1e293b" font-weight="600">0°</text>
+                    <circle cx="140" cy="50" r="9" fill="#3b82f6" class="clickable-point" data-target="ax0"/>
+                    <rect class="indicator-value-bg" x="124" y="60" width="32" height="22" rx="4"/>
+                    <text class="indicator-value ax-val" id="axVal0" x="140" y="70" font-size="14">0.00</text>
+                    <line x1="225" y1="115" x2="205" y2="115" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="222" y="108" font-size="14" fill="#1e293b" font-weight="600">90°</text>
+                    <circle cx="205" cy="115" r="9" fill="#3b82f6" class="clickable-point" data-target="ax45"/>
+                    <rect class="indicator-value-bg" x="164" y="104" width="32" height="22" rx="4"/>
+                    <text class="indicator-value ax-val" id="axVal45" x="180" y="115" font-size="14">0.00</text>
+                    <line x1="140" y1="200" x2="140" y2="180" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="128" y="214" font-size="14" fill="#1e293b" font-weight="600">180°</text>
+                    <circle cx="140" cy="180" r="9" fill="#3b82f6" class="clickable-point" data-target="ax180"/>
+                    <rect class="indicator-value-bg" x="124" y="149" width="32" height="22" rx="4"/>
+                    <text class="indicator-value ax-val" id="axVal180" x="140" y="160" font-size="14">0.00</text>
+                    <line x1="55" y1="115" x2="75" y2="115" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="38" y="108" font-size="14" fill="#1e293b" font-weight="600">270°</text>
+                    <circle cx="75" cy="115" r="9" fill="#3b82f6" class="clickable-point" data-target="ax225"/>
+                    <rect class="indicator-value-bg" x="84" y="104" width="32" height="22" rx="4"/>
+                    <text class="indicator-value ax-val" id="axVal225" x="100" y="115" font-size="14">0.00</text>
+                    <text class="delta-on-svg ax-delta" x="140" y="235" id="axDeltaSvg" font-size="12">Δ 0-180: 0.00</text>
+                    <text class="delta-on-svg ax-delta" x="140" y="250" id="ax45DeltaSvg" font-size="12">Δ 90-270: 0.00</text>
+                    <text class="hint-text" x="140" y="142">нажмите на точку</text>
+                    <g transform="translate(10, 190)">
+                        <circle cx="30" cy="0" r="18" fill="#888" stroke="#555" stroke-width="2"/>
+                        <circle cx="30" cy="0" r="14" fill="#ddd"/>
+                        <circle cx="30" cy="0" r="10" fill="#fff"/>
+                        <line x1="30" y1="-12" x2="30" y2="-9" stroke="#333" stroke-width="1.5"/>
+                        <line x1="30" y1="12" x2="30" y2="9" stroke="#333" stroke-width="1.5"/>
+                        <line x1="18" y1="0" x2="21" y2="0" stroke="#333" stroke-width="1.5"/>
+                        <line x1="39" y1="0" x2="42" y2="0" stroke="#333" stroke-width="1.5"/>
+                        <line x1="30" y1="0" x2="34" y2="-8" stroke="#000" stroke-width="2"/>
+                        <circle cx="30" cy="0" r="2" fill="#333"/>
+                        <text x="30" y="28" font-size="8" fill="#555" text-anchor="middle">осевой</text>
+                    </g>
+                </svg>
+                <input type="number" step="0.01" class="point-input" id="pointInputAx" placeholder="0.00" inputmode="decimal">
+            </div>
+            <div class="caption">🖱️ клик по точке → ввод значения</div>
+        </div>
+
+        <div class="indicator-card">
+            <div class="title">📐 Радиальный индикатор (смещение) <span>Rad</span>
+                <span class="status-badge badge-green" id="radStatus">OK</span>
+            </div>
+            <div class="indicator-wrapper" id="radWrapper">
+                <svg width="280" height="260" viewBox="0 0 280 260">
+                    <circle cx="140" cy="115" r="85" fill="none" stroke="#d0dfee" stroke-width="2.5" stroke-dasharray="5 5"/>
+                    <circle cx="140" cy="115" r="4" fill="#1e293b"/>
+                    <line x1="140" y1="30" x2="140" y2="50" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="132" y="24" font-size="14" fill="#1e293b" font-weight="600">0°</text>
+                    <circle cx="140" cy="50" r="9" fill="#3b82f6" class="clickable-point" data-target="rad0"/>
+                    <rect class="indicator-value-bg" x="124" y="60" width="32" height="22" rx="4"/>
+                    <text class="indicator-value rad-val" id="radVal0" x="140" y="70" font-size="14">0.00</text>
+                    <line x1="225" y1="115" x2="205" y2="115" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="222" y="108" font-size="14" fill="#1e293b" font-weight="600">90°</text>
+                    <circle cx="205" cy="115" r="9" fill="#3b82f6" class="clickable-point" data-target="rad45"/>
+                    <rect class="indicator-value-bg" x="164" y="104" width="32" height="22" rx="4"/>
+                    <text class="indicator-value rad-val" id="radVal45" x="180" y="115" font-size="14">0.00</text>
+                    <line x1="140" y1="200" x2="140" y2="180" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="128" y="214" font-size="14" fill="#1e293b" font-weight="600">180°</text>
+                    <circle cx="140" cy="180" r="9" fill="#3b82f6" class="clickable-point" data-target="rad180"/>
+                    <rect class="indicator-value-bg" x="124" y="149" width="32" height="22" rx="4"/>
+                    <text class="indicator-value rad-val" id="radVal180" x="140" y="160" font-size="14">0.00</text>
+                    <line x1="55" y1="115" x2="75" y2="115" stroke="#3b82f6" stroke-width="2.5"/>
+                    <text x="38" y="108" font-size="14" fill="#1e293b" font-weight="600">270°</text>
+                    <circle cx="75" cy="115" r="9" fill="#3b82f6" class="clickable-point" data-target="rad225"/>
+                    <rect class="indicator-value-bg" x="84" y="104" width="32" height="22" rx="4"/>
+                    <text class="indicator-value rad-val" id="radVal225" x="100" y="115" font-size="14">0.00</text>
+                    <text class="delta-on-svg rad-delta" x="140" y="235" id="radDeltaSvg" font-size="12">Δ 0-180: 0.00</text>
+                    <text class="delta-on-svg rad-delta" x="140" y="250" id="rad45DeltaSvg" font-size="12">Δ 90-270: 0.00</text>
+                    <text class="hint-text" x="140" y="142">нажмите на точку</text>
+                    <g transform="translate(230, 170)">
+                        <circle cx="20" cy="0" r="18" fill="#cc3333" stroke="#990000" stroke-width="2"/>
+                        <circle cx="20" cy="0" r="14" fill="#ff6666"/>
+                        <circle cx="20" cy="0" r="10" fill="#ffcccc"/>
+                        <line x1="20" y1="-12" x2="20" y2="-9" stroke="#333" stroke-width="1.5"/>
+                        <line x1="20" y1="12" x2="20" y2="9" stroke="#333" stroke-width="1.5"/>
+                        <line x1="8" y1="0" x2="11" y2="0" stroke="#333" stroke-width="1.5"/>
+                        <line x1="29" y1="0" x2="32" y2="0" stroke="#333" stroke-width="1.5"/>
+                        <line x1="20" y1="0" x2="16" y2="-8" stroke="#000" stroke-width="2"/>
+                        <circle cx="20" cy="0" r="2" fill="#333"/>
+                        <text x="20" y="28" font-size="8" fill="#990000" text-anchor="middle">радиальный</text>
+                    </g>
+                </svg>
+                <input type="number" step="0.01" class="point-input" id="pointInputRad" placeholder="0.00" inputmode="decimal">
+            </div>
+            <div class="caption">🖱️ клик по точке → ввод значения</div>
+        </div>
+    </div>
+
+    <!-- ============================ 3D VISUALIZER ============================ -->
+    <div class="visualizer-card" id="visualizer3DCard">
+        <div class="visualizer-header">
+            <h2>🧊 3D Визуализатор рассимметрирования валов</h2>
+            <div class="visualizer-toolbar">
+                <button class="btn btn-sm btn-secondary active" id="btnModeMeasured" onclick="set3DMode('measured')">До коррекции</button>
+                <button class="btn btn-sm btn-secondary" id="btnModeCorrected" onclick="set3DMode('corrected')">После коррекции</button>
+                <button class="btn btn-sm btn-action" id="btnAnimToggle" onclick="toggle3DRotation()">▶️ Вращение</button>
+                <button class="btn btn-sm btn-secondary" onclick="reset3DCamera()">🎥 Сброс камеры</button>
+            </div>
+        </div>
+
+        <div class="three-container-wrapper">
+            <canvas id="threeCanvas"></canvas>
+            <div class="three-overlay">
+                <div class="stat-line"><span>Передняя лапа (V):</span><span class="stat-val" id="3dFrontVert">0.00 мм</span></div>
+                <div class="stat-line"><span>Задняя лапа (V):</span><span class="stat-val" id="3dRearVert">0.00 мм</span></div>
+                <div class="stat-line"><span>Передняя лапа (H):</span><span class="stat-val" id="3dFrontHoriz">0.00 мм</span></div>
+                <div class="stat-line"><span>Задняя лапа (H):</span><span class="stat-val" id="3dRearHoriz">0.00 мм</span></div>
+                <div class="stat-line"><span>Угол перекоса:</span><span class="stat-val" id="3dAngleDev">0.00°</span></div>
+            </div>
+        </div>
+
+        <div class="scale-control-bar">
+            <label>🔍 Масштаб отображения расхождения:</label>
+            <input type="range" class="scale-slider" id="scaleSlider" min="1" max="50" value="20" oninput="update3DScale(this.value)">
+            <span class="scale-val" id="scaleValDisplay">20×</span>
+            <div style="margin-left: auto; display: flex; gap: 6px;">
+                <button class="btn btn-sm btn-secondary" onclick="set3DCameraPreset('iso')">Изометрия</button>
+                <button class="btn btn-sm btn-secondary" onclick="set3DCameraPreset('side')">Сбоку</button>
+                <button class="btn btn-sm btn-secondary" onclick="set3DCameraPreset('top')">Сверху</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- СХЕМЫ КОРРЕКЦИЙ -->
+    <div class="schemes-row">
+        <!-- Вертикальная коррекция -->
+        <div class="scheme-card">
+            <div class="title">📐 Вертикальная коррекция</div>
+            <div class="subtitle">вид сбоку</div>
+            <div class="image-container">
+                <img src="Вид сбоку.png" alt="Вид сбоку" loading="lazy">
+                <span id="sideArrowFront" class="corr-arrow vert" style="left:48%; top:105%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="sideLabelFront" class="corr-label vert" style="left:48%; top:120%; transform: translate(-50%, -50%);">0.00</span>
+                <span id="sideArrowRear" class="corr-arrow vert" style="left:63%; top:105%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="sideLabelRear" class="corr-label vert" style="left:63%; top:120%; transform: translate(-50%, -50%);">0.00</span>
+            </div>
+            <div class="action-hint" id="vertHint">📌 Рекомендации: выполните коррекцию</div>
+        </div>
+
+        <!-- Горизонтальное смещение -->
+        <div class="scheme-card">
+            <div class="title">🗺️ Горизонтальное смещение</div>
+            <div class="subtitle">вид сверху</div>
+            <div class="image-container">
+                <img src="Вид сверху.png" alt="Вид сверху" loading="lazy">
+                <!-- Верхние лапы -->
+                <span id="topArrowFront" class="corr-arrow horiz" style="left:48%; top:-10%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="topLabelFront" class="corr-label horiz" style="left:48%; top:-23%; transform: translate(-50%, -50%);">0.00</span>
+                <span id="topArrowRear" class="corr-arrow horiz" style="left:61%; top:-10%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="topLabelRear" class="corr-label horiz" style="left:61%; top:-23%; transform: translate(-50%, -50%);">0.00</span>
+                <!-- Нижние лапы (дублирующие) -->
+                <span id="topShiftArrowFront" class="corr-arrow horiz" style="left:48%; top:105%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="topShiftFront" class="corr-label horiz" style="left:48%; top:123%; transform: translate(-50%, -50%);">0.00</span>
+                <span id="topShiftArrowRear" class="corr-arrow horiz" style="left:61%; top:105%; display:none; transform: translate(-50%, -50%);">▲</span>
+                <span id="topShiftRear" class="corr-label horiz" style="left:61%; top:123%; transform: translate(-50%, -50%);">0.00</span>
+            </div>
+            <div class="action-hint" id="horizHint">📌 Рекомендации: выполните смещение</div>
+        </div>
+    </div>
+
+    <!-- БЛОК ДОПУСКОВ -->
+    <div class="tolerance-card">
+        <div class="title">🎯 Допуски</div>
+        <div class="value-row"><span class="label">Базовый допуск (таблица №2)</span><span class="value" id="baseTolDisplay">0.00</span></div>
+        <div class="value-row"><span class="label">Допуск для смещения (Rad)</span><span class="value" id="tolDisplayRadRes">0.00</span></div>
+        <div class="value-row"><span class="label">Допуск для перекоса (Ax) — D×A/500</span><span class="value" id="tolDisplayAxRes">0.00</span></div>
+        <div class="value-row"><span class="label">Макс. отклонение</span><span class="value" id="maxDevDisplay">0.00</span></div>
+        <div class="value-row"><span class="label">Статус</span><span class="value" id="statusDisplay">✅ В норме</span></div>
+        <div class="tolerance-visual">
+            <div class="fill green" id="tolBar" style="width:0%"></div>
+            <div class="marker" id="tolMarker" style="left:50%"></div>
+        </div>
+    </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+    (function() {
+        // Скрытые поля для хранения значений
+        const ax0 = document.createElement('input'); ax0.type = 'hidden'; ax0.id = 'ax0'; ax0.value = '0'; document.body.appendChild(ax0);
+        const ax180 = document.createElement('input'); ax180.type = 'hidden'; ax180.id = 'ax180'; ax180.value = '0'; document.body.appendChild(ax180);
+        const ax45 = document.createElement('input'); ax45.type = 'hidden'; ax45.id = 'ax45'; ax45.value = '0'; document.body.appendChild(ax45);
+        const ax225 = document.createElement('input'); ax225.type = 'hidden'; ax225.id = 'ax225'; ax225.value = '0'; document.body.appendChild(ax225);
+        const rad0 = document.createElement('input'); rad0.type = 'hidden'; rad0.id = 'rad0'; rad0.value = '0'; document.body.appendChild(rad0);
+        const rad180 = document.createElement('input'); rad180.type = 'hidden'; rad180.id = 'rad180'; rad180.value = '0'; document.body.appendChild(rad180);
+        const rad45 = document.createElement('input'); rad45.type = 'hidden'; rad45.id = 'rad45'; rad45.value = '0'; document.body.appendChild(rad45);
+        const rad225 = document.createElement('input'); rad225.type = 'hidden'; rad225.id = 'rad225'; rad225.value = '0'; document.body.appendChild(rad225);
+
+        const paramR = document.getElementById('paramR');
+        const paramA = document.getElementById('paramA');
+        const paramB = document.getElementById('paramB');
+        const fixtureVariant = document.getElementById('fixtureVariant');
+        const couplingType = document.getElementById('couplingType');
+        const rpmInput = document.getElementById('rpmInput');
+
+        const baseTolDisplay = document.getElementById('baseTolDisplay');
+        const tolDisplayRadRes = document.getElementById('tolDisplayRadRes');
+        const tolDisplayAxRes = document.getElementById('tolDisplayAxRes');
+        const maxDevDisplay = document.getElementById('maxDevDisplay');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const tolBar = document.getElementById('tolBar');
+        const tolMarker = document.getElementById('tolMarker');
+        const maxDeviation = document.getElementById('maxDeviation');
+        const currentTime = document.getElementById('currentTime');
+        const statusState = document.getElementById('statusState');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const axStatus = document.getElementById('axStatus');
+        const radStatus = document.getElementById('radStatus');
+        const vertHint = document.getElementById('vertHint');
+        const horizHint = document.getElementById('horizHint');
+
+        const axDeltaSvg = document.getElementById('axDeltaSvg');
+        const ax45DeltaSvg = document.getElementById('ax45DeltaSvg');
+        const radDeltaSvg = document.getElementById('radDeltaSvg');
+        const rad45DeltaSvg = document.getElementById('rad45DeltaSvg');
+
+        // Элементы стрелок и меток
+        const sideArrowFront = document.getElementById('sideArrowFront');
+        const sideArrowRear = document.getElementById('sideArrowRear');
+        const sideLabelFront = document.getElementById('sideLabelFront');
+        const sideLabelRear = document.getElementById('sideLabelRear');
+        const topArrowFront = document.getElementById('topArrowFront');
+        const topArrowRear = document.getElementById('topArrowRear');
+        const topLabelFront = document.getElementById('topLabelFront');
+        const topLabelRear = document.getElementById('topLabelRear');
+        const topShiftFront = document.getElementById('topShiftFront');
+        const topShiftRear = document.getElementById('topShiftRear');
+        const topShiftArrowFront = document.getElementById('topShiftArrowFront');
+        const topShiftArrowRear = document.getElementById('topShiftArrowRear');
+
+        const axVal0 = document.getElementById('axVal0');
+        const axVal45 = document.getElementById('axVal45');
+        const axVal180 = document.getElementById('axVal180');
+        const axVal225 = document.getElementById('axVal225');
+        const radVal0 = document.getElementById('radVal0');
+        const radVal45 = document.getElementById('radVal45');
+        const radVal180 = document.getElementById('radVal180');
+        const radVal225 = document.getElementById('radVal225');
+
+        const pointInputAx = document.getElementById('pointInputAx');
+        const pointInputRad = document.getElementById('pointInputRad');
+        const variantImage = document.getElementById('variantImage');
+
+        let activeTarget = null;
+        let activeInput = null;
+        let darkMode = false;
+
+        // Общий объект для передачи результатов в 3D
+        window.calcResults = {
+            vertFront: 0,
+            vertRear: 0,
+            horizFront: 0,
+            horizRear: 0,
+            angleDev: 0
+        };
+
+        window.toggleTheme = function() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark', darkMode);
+            const btn = document.querySelector('.btn-theme');
+            btn.textContent = darkMode ? '☀️ Светлый режим' : '🌙 Ночной режим';
+            localStorage.setItem('centrovka-theme', darkMode ? 'dark' : 'light');
+            if (window.update3DTheme) window.update3DTheme(darkMode);
+        };
+
+        const savedTheme = localStorage.getItem('centrovka-theme');
+        if (savedTheme === 'dark') {
+            darkMode = true;
+            document.body.classList.add('dark');
+            document.querySelector('.btn-theme').textContent = '☀️ Светлый режим';
+        }
+
+        function round2(v) { return Math.round(v * 100) / 100; }
+        function getVal(id) { return parseFloat(document.getElementById(id).value) || 0; }
+
+        function showToast(msg, type = 'info') {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = 'toast show ' + type;
+            clearTimeout(t._timeout);
+            t._timeout = setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function updateTime() {
+            const now = new Date();
+            currentTime.textContent = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+        }
+        setInterval(updateTime, 10000);
+        updateTime();
+
+        function updateIndicatorValues() {
+            axVal0.textContent = parseFloat(ax0.value || 0).toFixed(2);
+            axVal45.textContent = parseFloat(ax45.value || 0).toFixed(2);
+            axVal180.textContent = parseFloat(ax180.value || 0).toFixed(2);
+            axVal225.textContent = parseFloat(ax225.value || 0).toFixed(2);
+            radVal0.textContent = parseFloat(rad0.value || 0).toFixed(2);
+            radVal45.textContent = parseFloat(rad45.value || 0).toFixed(2);
+            radVal180.textContent = parseFloat(rad180.value || 0).toFixed(2);
+            radVal225.textContent = parseFloat(rad225.value || 0).toFixed(2);
+        }
+
+        window.toggleAccordion = function() {
+            document.getElementById('instructionAccordion').classList.toggle('open');
+        };
+
+        document.querySelectorAll('.clickable-point').forEach(point => {
+            point.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const targetId = this.dataset.target;
+                const targetInput = document.getElementById(targetId);
+                if (!targetInput) return;
+                const isAx = targetId.startsWith('ax');
+                const inputField = isAx ? pointInputAx : pointInputRad;
+
+                const rect = this.getBoundingClientRect();
+                const wrapperRect = this.closest('.indicator-wrapper').getBoundingClientRect();
+                let left = rect.left - wrapperRect.left + rect.width / 2 - 40;
+                let top = rect.top - wrapperRect.top - 20;
+                const ww = wrapperRect.width;
+                if (left + 80 > ww) left = ww - 85;
+                if (left < 0) left = 5;
+
+                inputField.style.display = 'block';
+                inputField.style.left = left + 'px';
+                inputField.style.top = top + 'px';
+                inputField.value = targetInput.value;
+                inputField.focus();
+                inputField.select();
+
+                activeTarget = targetInput;
+                activeInput = inputField;
+                document.querySelectorAll('.clickable-point').forEach(p => p.classList.remove('active-point'));
+                this.classList.add('active-point');
+
+                inputField.onblur = function() {
+                    const val = parseFloat(this.value);
+                    if (!isNaN(val) && activeTarget) {
+                        activeTarget.value = round2(val);
+                        computeAll();
+                        updateIndicatorValues();
+                    }
+                    this.style.display = 'none';
+                    document.querySelectorAll('.clickable-point').forEach(p => p.classList.remove('active-point'));
+                    activeTarget = null;
+                    activeInput = null;
+                };
+                inputField.onkeydown = function(e) {
+                    if (e.key === 'Enter') { this.blur(); e.preventDefault(); }
+                    if (e.key === 'Escape') {
+                        this.style.display = 'none';
+                        document.querySelectorAll('.clickable-point').forEach(p => p.classList.remove('active-point'));
+                        activeTarget = null;
+                        activeInput = null;
+                        e.preventDefault();
+                    }
+                };
+                inputField.oninput = function() {
+                    const val = parseFloat(this.value);
+                    if (!isNaN(val) && activeTarget) {
+                        activeTarget.value = round2(val);
+                        computeAll();
+                        updateIndicatorValues();
+                    }
+                };
+            });
+        });
+
+        document.addEventListener('click', function(e) {
+            if (activeInput && !activeInput.contains(e.target) && !e.target.closest('.clickable-point')) {
+                const val = parseFloat(activeInput.value);
+                if (!isNaN(val) && activeTarget) { activeTarget.value = round2(val); computeAll(); updateIndicatorValues(); }
+                activeInput.style.display = 'none';
+                document.querySelectorAll('.clickable-point').forEach(p => p.classList.remove('active-point'));
+                activeTarget = null;
+                activeInput = null;
+            }
+        });
+
+        function updateVariantImage() {
+            const select = document.getElementById('fixtureVariant');
+            const val = select.value;
+            const img = document.getElementById('variantImage');
+            if (val === '1') {
+                img.src = encodeURI('стандарт 1.PNG');
+            } else if (val === '2') {
+                img.src = encodeURI('альтернатива 2.PNG');
+            } else {
+                img.src = '';
+            }
+        }
+
+        function computeAll() {
+            const ax0v = getVal('ax0'), ax180v = getVal('ax180'), ax45v = getVal('ax45'), ax225v = getVal('ax225');
+            const rad0v = getVal('rad0'), rad180v = getVal('rad180'), rad45v = getVal('rad45'), rad225v = getVal('rad225');
+            const R = getVal('paramR'), a = getVal('paramA'), b = getVal('paramB');
+            const variant = parseInt(fixtureVariant.value, 10);
+            const coupling = parseInt(couplingType.value, 10);
+            const rpm = getVal('rpmInput');
+
+            const deltaAx = round2(Math.abs(ax0v - ax180v) / 2);
+            const deltaAx45 = round2(Math.abs(ax45v - ax225v) / 2);
+            const deltaRad = round2(Math.abs(rad0v - rad180v) / 2);
+            const deltaRad45 = round2(Math.abs(rad45v - rad225v) / 2);
+            const maxDev = Math.max(deltaAx, deltaAx45, deltaRad, deltaRad45);
+
+            axDeltaSvg.textContent = 'Δ 0-180: ' + deltaAx.toFixed(2);
+            ax45DeltaSvg.textContent = 'Δ 90-270: ' + deltaAx45.toFixed(2);
+            radDeltaSvg.textContent = 'Δ 0-180: ' + deltaRad.toFixed(2);
+            rad45DeltaSvg.textContent = 'Δ 90-270: ' + deltaRad45.toFixed(2);
+
+            maxDeviation.textContent = maxDev.toFixed(2);
+            maxDevDisplay.textContent = maxDev.toFixed(2);
+
+            let baseTolerance = 0.06;
+            if (coupling === 1) {
+                if (rpm < 500) baseTolerance = 0.15;
+                else if (rpm < 750) baseTolerance = 0.10;
+                else if (rpm < 1500) baseTolerance = 0.08;
+                else if (rpm < 3000) baseTolerance = 0.06;
+                else baseTolerance = 0.04;
+            } else if (coupling === 2) {
+                if (rpm < 500) baseTolerance = 0.20;
+                else if (rpm < 750) baseTolerance = 0.15;
+                else if (rpm < 1500) baseTolerance = 0.12;
+                else if (rpm < 3000) baseTolerance = 0.10;
+                else baseTolerance = 0.08;
+            } else if (coupling === 3) {
+                if (rpm < 500) baseTolerance = 0.10;
+                else if (rpm < 750) baseTolerance = 0.08;
+                else if (rpm < 1500) baseTolerance = 0.06;
+                else if (rpm < 3000) baseTolerance = 0.04;
+                else baseTolerance = 0.02;
+            }
+            baseTolerance = round2(baseTolerance);
+            baseTolDisplay.textContent = baseTolerance.toFixed(2);
+
+            const tolRad = baseTolerance;
+            const D = R * 2;
+            const tolAx = round2(baseTolerance * D / 500);
+
+            tolDisplayRadRes.textContent = tolRad.toFixed(2);
+            tolDisplayAxRes.textContent = tolAx.toFixed(2);
+
+            const C3 = ax0v, C9 = ax180v;
+            const termAxVert = round2((C9 - C3) / 2);
+            const G3 = rad0v, G9 = rad180v;
+            const termRadVert = round2((G3 - G9) / 2);
+
+            let radSign = 1;
+            if (variant === 2) radSign = -1;
+
+            const angFront = round2(radSign * termRadVert + termAxVert * (a / R));
+            const angRear = round2(radSign * termRadVert + termAxVert * ((a + b) / R));
+            const angFrontR = round2(angFront);
+            const angRearR = round2(angRear);
+
+            const D6 = ax45v, B6 = ax225v;
+            const termAxHor = round2((B6 - D6) / 2);
+            const H6 = rad45v, F6 = rad225v;
+            const termRadHor = round2((H6 - F6) / 2);
+
+            const parFront = round2(radSign * termRadHor + termAxHor * (a / R));
+            const parRear = round2(radSign * termRadHor + termAxHor * ((a + b) / R));
+            const parFrontR = round2(parFront);
+            const parRearR = round2(parRear);
+
+            const isOK = maxDev <= tolRad;
+            const statusTextValue = isOK ? '✅ В норме' : '⚠️ Превышение допуска!';
+            const statusClass = isOK ? 'badge-green' : 'badge-red';
+            const dotClass = isOK ? 'green' : 'red';
+            const barColor = isOK ? 'green' : (maxDev > tolRad * 1.5 ? 'red' : 'yellow');
+            const barPercent = tolRad > 0 ? Math.min((maxDev / tolRad) * 100, 100) : 0;
+
+            statusDisplay.textContent = statusTextValue;
+            statusDisplay.className = 'value ' + (isOK ? 'success' : 'danger');
+            statusState.textContent = isOK ? 'В норме' : 'Превышение!';
+            statusState.className = 'badge ' + statusClass;
+            statusDot.className = 'status-indicator ' + dotClass;
+            statusText.textContent = isOK ? 'OK' : '⚠️';
+            tolBar.className = 'fill ' + barColor;
+            tolBar.style.width = barPercent + '%';
+            tolMarker.style.left = barPercent + '%';
+
+            const axOK = deltaAx <= tolAx && deltaAx45 <= tolAx;
+            const radOK = deltaRad <= tolRad && deltaRad45 <= tolRad;
+            axStatus.textContent = axOK ? 'OK' : '⚠️';
+            axStatus.className = 'status-badge ' + (axOK ? 'badge-green' : 'badge-red');
+            radStatus.textContent = radOK ? 'OK' : '⚠️';
+            radStatus.className = 'status-badge ' + (radOK ? 'badge-green' : 'badge-red');
+
+            // Вертикальная коррекция
+            if (Math.abs(angFrontR) > 0.001) {
+                sideArrowFront.textContent = angFrontR > 0 ? '▲' : '▼';
+                sideArrowFront.style.display = 'block';
+                sideLabelFront.textContent = Math.abs(angFrontR).toFixed(2);
+            } else {
+                sideArrowFront.style.display = 'none';
+                sideLabelFront.textContent = '0.00';
+            }
+            if (Math.abs(angRearR) > 0.001) {
+                sideArrowRear.textContent = angRearR > 0 ? '▲' : '▼';
+                sideArrowRear.style.display = 'block';
+                sideLabelRear.textContent = Math.abs(angRearR).toFixed(2);
+            } else {
+                sideArrowRear.style.display = 'none';
+                sideLabelRear.textContent = '0.00';
+            }
+
+            // Горизонтальная – верхние лапы
+            if (Math.abs(parFrontR) > 0.001) {
+                topArrowFront.textContent = parFrontR > 0 ? '▲' : '▼';
+                topArrowFront.style.display = 'block';
+                topLabelFront.textContent = Math.abs(parFrontR).toFixed(2);
+            } else {
+                topArrowFront.style.display = 'none';
+                topLabelFront.textContent = '0.00';
+            }
+            if (Math.abs(parRearR) > 0.001) {
+                topArrowRear.textContent = parRearR > 0 ? '▲' : '▼';
+                topArrowRear.style.display = 'block';
+                topLabelRear.textContent = Math.abs(parRearR).toFixed(2);
+            } else {
+                topArrowRear.style.display = 'none';
+                topLabelRear.textContent = '0.00';
+            }
+
+            // Горизонтальная – нижние лапы (дублирующие)
+            if (Math.abs(parFrontR) > 0.001) {
+                topShiftArrowFront.textContent = parFrontR > 0 ? '▲' : '▼';
+                topShiftArrowFront.style.display = 'block';
+                topShiftFront.textContent = Math.abs(parFrontR).toFixed(2);
+            } else {
+                topShiftArrowFront.style.display = 'none';
+                topShiftFront.textContent = '0.00';
+            }
+            if (Math.abs(parRearR) > 0.001) {
+                topShiftArrowRear.textContent = parRearR > 0 ? '▲' : '▼';
+                topShiftArrowRear.style.display = 'block';
+                topShiftRear.textContent = Math.abs(parRearR).toFixed(2);
+            } else {
+                topShiftArrowRear.style.display = 'none';
+                topShiftRear.textContent = '0.00';
+            }
+
+            // Подсказки
+            if (Math.abs(angFrontR) > 0.001 || Math.abs(angRearR) > 0.001) {
+                vertHint.textContent = '🔧 Требуется коррекция: ' +
+                    (Math.abs(angFrontR) > 0.001 ? 'перед ' + Math.abs(angFrontR).toFixed(2) + 'мм ' : '') +
+                    (Math.abs(angRearR) > 0.001 ? 'зад ' + Math.abs(angRearR).toFixed(2) + 'мм' : '');
+                vertHint.style.color = '#dc2626';
+            } else {
+                vertHint.textContent = '✅ Вертикальная коррекция выполнена';
+                vertHint.style.color = '#22c55e';
+            }
+
+            if (Math.abs(parFrontR) > 0.001 || Math.abs(parRearR) > 0.001) {
+                horizHint.textContent = '🔧 Требуется смещение: ' +
+                    (Math.abs(parFrontR) > 0.001 ? 'перед ' + Math.abs(parFrontR).toFixed(2) + 'мм ' : '') +
+                    (Math.abs(parRearR) > 0.001 ? 'зад ' + Math.abs(parRearR).toFixed(2) + 'мм' : '');
+                horizHint.style.color = '#7c3aed';
+            } else {
+                horizHint.textContent = '✅ Горизонтальное смещение выполнено';
+                horizHint.style.color = '#22c55e';
+            }
+
+            // ================== Синхронизация с 3D ==================
+            if (window.calcResults) {
+                window.calcResults.vertFront = angFrontR;
+                window.calcResults.vertRear = angRearR;
+                window.calcResults.horizFront = parFrontR;
+                window.calcResults.horizRear = parRearR;
+                const angleRad = Math.atan2((angRearR - angFrontR), (b || 1));
+                window.calcResults.angleDev = round2(angleRad * (180 / Math.PI));
+            }
+            if (window.update3DScene) window.update3DScene();
+        }
+
+        window.resetAll = function() {
+            ax0.value = '0'; ax45.value = '0'; ax180.value = '0'; ax225.value = '0';
+            rad0.value = '0'; rad45.value = '0'; rad180.value = '0'; rad225.value = '0';
+            computeAll();
+            updateIndicatorValues();
+            if (activeInput) { activeInput.style.display = 'none'; document.querySelectorAll('.clickable-point').forEach(p => p.classList.remove('active-point')); activeTarget = null; activeInput = null; }
+            showToast('🔄 Показания сброшены', 'info');
+        };
+
+        document.querySelectorAll('input, select').forEach(el => {
+            el.addEventListener('input', function() { computeAll(); updateIndicatorValues(); });
+            el.addEventListener('change', function() { computeAll(); updateIndicatorValues(); });
+        });
+
+        document.getElementById('fixtureVariant').addEventListener('change', updateVariantImage);
+
+        computeAll();
+        updateIndicatorValues();
+        updateVariantImage();
+
+        console.log('✅ Центровка валов PRO + 3D загружена');
+    })();
+
+    // ---------------------------------------------------------------------
+    // THREE.JS 3D VISUALIZER ENGINE
+    // ---------------------------------------------------------------------
+    (function() {
+        const container = document.querySelector('.three-container-wrapper');
+        const canvas = document.getElementById('threeCanvas');
+
+        let scene, camera, renderer, controls;
+        let fixedMachineGroup, movableMachineGroup;
+        let frontFeetShims, rearFeetShims;
+        let shaftAxisFixed, shaftAxisMovable;
+
+        let arrowGroup;
+
+        // 3D стрелки коррекции
+        let frontVertArrow, rearVertArrow, frontHorizArrow, rearHorizArrow;
+        let frontVertLabel, rearVertLabel, frontHorizLabel, rearHorizLabel;
+
+        let is3DModeCorrected = false;
+        let is3DRotating = false;
+        let scaleExaggeration = 20;
+
+        const readoutFrontVert = document.getElementById('3dFrontVert');
+        const readoutRearVert = document.getElementById('3dRearVert');
+        const readoutFrontHoriz = document.getElementById('3dFrontHoriz');
+        const readoutRearHoriz = document.getElementById('3dRearHoriz');
+        const readoutAngleDev = document.getElementById('3dAngleDev');
+        const scaleValDisplay = document.getElementById('scaleValDisplay');
+
+        // -----------------------------------------------------------------
+        // Спрайты с текстом (значение коррекции)
+        // -----------------------------------------------------------------
+        function roundRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function makeTextSprite() {
+            const c = document.createElement('canvas');
+            c.width = 340;
+            c.height = 120;
+            const ctx = c.getContext('2d');
+            const texture = new THREE.CanvasTexture(c);
+            texture.minFilter = THREE.LinearFilter;
+            const material = new THREE.SpriteMaterial({
+                map: texture,
+                depthTest: false,
+                depthWrite: false,
+                transparent: true
+            });
+            const sprite = new THREE.Sprite(material);
+            sprite.scale.set(2.1, 0.74, 1);
+            sprite.renderOrder = 1000;
+            sprite.userData = { canvas: c, ctx: ctx, texture: texture };
+            return sprite;
+        }
+
+        function setSpriteText(sprite, text, color) {
+            const { canvas: c, ctx, texture } = sprite.userData;
+            ctx.clearRect(0, 0, c.width, c.height);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.35)';
+            roundRect(ctx, 6, 6, c.width - 12, c.height - 12, 26);
+            ctx.fill();
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 6;
+            roundRect(ctx, 6, 6, c.width - 12, c.height - 12, 26);
+            ctx.stroke();
+
+            ctx.font = 'bold 72px Inter, Arial, sans-serif';
+            ctx.fillStyle = color;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, c.width / 2, c.height / 2 + 3);
+
+            texture.needsUpdate = true;
+        }
+
+        // -----------------------------------------------------------------
+        // ПЛОСКАЯ 3D-стрелка (стержень-коробка + плоский треугольный наконечник)
+        // С depthTest:false — всегда рисуется ПОВЕРХ 3D-сцены,
+        // чтобы её не закрывал корпус двигателя.
+        // -----------------------------------------------------------------
+        function make3DArrow(color) {
+            const group = new THREE.Group();
+            const mat = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.4,
+                metalness: 0.35,
+                emissive: color,
+                emissiveIntensity: 0.18,
+                side: THREE.DoubleSide,
+                flatShading: true,
+                depthTest: false,      // ← рисуется поверх всего
+                depthWrite: false
+            });
+
+            const SHAFT_WIDTH  = (0.8 / 3) * 2;
+            const HEAD_WIDTH   = SHAFT_WIDTH * 2.2;
+            const HEAD_HEIGHT  = 0.55;
+            const DEPTH        = 0.06;
+
+            const shaft = new THREE.Mesh(
+                new THREE.BoxGeometry(SHAFT_WIDTH, 1, DEPTH),
+                mat
+            );
+            shaft.renderOrder = 998;
+            group.add(shaft);
+
+            const headShape = new THREE.Shape();
+            headShape.moveTo(-HEAD_WIDTH / 2, 0);
+            headShape.lineTo( HEAD_WIDTH / 2, 0);
+            headShape.lineTo( 0, HEAD_HEIGHT);
+            headShape.closePath();
+            const headGeo = new THREE.ShapeGeometry(headShape);
+            const head = new THREE.Mesh(headGeo, mat);
+            head.renderOrder = 998;
+            group.add(head);
+
+            group.userData = {
+                shaft,
+                head,
+                mat,
+                HEAD_HEIGHT
+            };
+            group.visible = false;
+            return group;
+        }
+
+        function updateArrow(arrow, origin, value, isVertical, sprite) {
+            if (!arrow) return;
+            const absV = Math.abs(value);
+
+            if (absV < 0.005) {
+                arrow.visible = false;
+                if (sprite) sprite.visible = false;
+                return;
+            }
+
+            arrow.visible = true;
+            arrow.position.copy(origin);
+
+            const { shaft, head, HEAD_HEIGHT } = arrow.userData;
+
+            const scaleFactor = scaleExaggeration / 20;
+            const shaftLen = 1.0 + Math.min(absV * 2.0 * scaleFactor, 4.5);
+
+            shaft.scale.y = shaftLen;
+            shaft.position.y = shaftLen / 2;
+
+            head.position.y = shaftLen;
+
+            let tipX = origin.x, tipY = origin.y, tipZ = origin.z;
+            const totalLen = shaftLen + HEAD_HEIGHT;
+
+            if (isVertical) {
+                // ВЕРТИКАЛЬ: base выше мотора, стрелка может идти вверх/вниз.
+                // Благодаря depthTest:false она будет видна поверх двигателя.
+                if (value > 0) arrow.rotation.set(0, 0, 0);
+                else arrow.rotation.set(0, 0, Math.PI);
+                tipY += (value > 0 ? totalLen : -totalLen);
+            } else {
+                // ГОРИЗОНТАЛЬ: инвертируем направление относительно знака,
+                // чтобы соответствовать виду сверху на HTML-схеме.
+                //   value > 0  → стрелка в сторону −Z
+                //   value < 0  → стрелка в сторону +Z
+                if (value > 0) arrow.rotation.set(-Math.PI / 2, 0, 0);   // head toward -Z
+                else arrow.rotation.set(Math.PI / 2, 0, 0);             // head toward +Z
+                tipZ += (value > 0 ? -totalLen : totalLen);
+            }
+
+            if (sprite) {
+                sprite.visible = true;
+                if (isVertical) {
+                    sprite.position.set(
+                        tipX,
+                        tipY + (value > 0 ? 0.9 : -0.9),
+                        tipZ
+                    );
+                } else {
+                    sprite.position.set(
+                        tipX,
+                        tipY,
+                        tipZ + (value > 0 ? -1.2 : 1.2)
+                    );
+                }
+
+                const txt = (value > 0 ? '+' : '−') + absV.toFixed(2);
+                const color = isVertical ? '#dc2626' : '#7c3aed';
+                setSpriteText(sprite, txt, color);
+            }
+        }
+
+        // -----------------------------------------------------------------
+        // Инициализация 3D-сцены
+        // -----------------------------------------------------------------
+        function init3D() {
+            if (!container || !canvas || typeof THREE === 'undefined') return;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(document.body.classList.contains('dark') ? 0x0f1a2b : 0xeef4fc);
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(12, 8, 16);
+
+            renderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
+            if (typeof THREE.OrbitControls !== 'undefined') {
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+                controls.dampingFactor = 0.05;
+                controls.maxPolarAngle = Math.PI / 2 + 0.1;
+                controls.minDistance = 4;
+                controls.maxDistance = 40;
+                controls.target.set(2, 1.5, 0);
+            }
+
+            // Освещение
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.75);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.85);
+            dirLight.position.set(15, 25, 15);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 1024;
+            dirLight.shadow.mapSize.height = 1024;
+            scene.add(dirLight);
+
+            const dirLight2 = new THREE.DirectionalLight(0x90b0ff, 0.35);
+            dirLight2.position.set(-15, 10, -15);
+            scene.add(dirLight2);
+
+            // Сетка
+            const gridHelper = new THREE.GridHelper(20, 20, 0x3b82f6, 0x94a3b8);
+            gridHelper.position.y = 0;
+            gridHelper.position.x = 2;
+            scene.add(gridHelper);
+
+            // Основание
+            const baseGeo = new THREE.BoxGeometry(14, 0.4, 6);
+            const baseMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.6, metalness: 0.5 });
+            const baseMesh = new THREE.Mesh(baseGeo, baseMat);
+            baseMesh.position.set(2, 0.2, 0);
+            baseMesh.receiveShadow = true;
+            scene.add(baseMesh);
+
+            // -------------------------------------------------------------
+            // 1. СТАЦИОНАРНЫЙ АГРЕГАТ (Насос / Слева)
+            // -------------------------------------------------------------
+            fixedMachineGroup = new THREE.Group();
+            fixedMachineGroup.position.set(-1.35, 0.4, 0);
+
+            const pumpBodyGeo = new THREE.CylinderGeometry(1.6, 1.6, 3.2, 32);
+            pumpBodyGeo.rotateZ(Math.PI / 2);
+            const pumpMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4, metalness: 0.3 });
+            const pumpMesh = new THREE.Mesh(pumpBodyGeo, pumpMat);
+            pumpMesh.position.set(-1.6, 1.8, 0);
+            pumpMesh.castShadow = true;
+            fixedMachineGroup.add(pumpMesh);
+
+            const pumpFootGeo = new THREE.BoxGeometry(3.5, 0.4, 3.2);
+            const pumpFootMesh = new THREE.Mesh(pumpFootGeo, pumpMat);
+            pumpFootMesh.position.set(-1.6, 0.2, 0);
+            pumpFootMesh.castShadow = true;
+            fixedMachineGroup.add(pumpFootMesh);
+
+            const fixedShaftGeo = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 24);
+            fixedShaftGeo.rotateZ(Math.PI / 2);
+            const shaftMat = new THREE.MeshStandardMaterial({ color: 0xcbd5e1, roughness: 0.2, metalness: 0.8 });
+            const fixedShaftMesh = new THREE.Mesh(fixedShaftGeo, shaftMat);
+            fixedShaftMesh.position.set(0.5, 1.8, 0);
+            fixedShaftMesh.castShadow = true;
+            fixedMachineGroup.add(fixedShaftMesh);
+
+            const fixedCoplGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.6, 32);
+            fixedCoplGeo.rotateZ(Math.PI / 2);
+            const coplMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.3, metalness: 0.7 });
+            const fixedCoplMesh = new THREE.Mesh(fixedCoplGeo, coplMat);
+            fixedCoplMesh.position.set(2.1, 1.8, 0);
+            fixedCoplMesh.castShadow = true;
+            fixedMachineGroup.add(fixedCoplMesh);
+
+            scene.add(fixedMachineGroup);
+
+            // -------------------------------------------------------------
+            // 2. ПОДВИЖНЫЙ АГРЕГАТ (Электродвигатель / Справа)
+            // -------------------------------------------------------------
+            movableMachineGroup = new THREE.Group();
+            movableMachineGroup.position.set(4.5, 0.4, 0);
+
+            const motorBodyGeo = new THREE.CylinderGeometry(1.5, 1.5, 4.2, 32);
+            motorBodyGeo.rotateZ(Math.PI / 2);
+            const motorMat = new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.4, metalness: 0.4 });
+            const motorMesh = new THREE.Mesh(motorBodyGeo, motorMat);
+            motorMesh.position.set(2.1, 1.8, 0);
+            motorMesh.castShadow = true;
+            movableMachineGroup.add(motorMesh);
+
+            const boxGeo = new THREE.BoxGeometry(0.9, 0.6, 0.9);
+            const boxMesh = new THREE.Mesh(boxGeo, motorMat);
+            boxMesh.position.set(2.1, 3.5, 0);
+            movableMachineGroup.add(boxMesh);
+
+            for (let r = 0.5; r <= 3.7; r += 0.4) {
+                const finGeo = new THREE.TorusGeometry(1.52, 0.04, 8, 32);
+                finGeo.rotateY(Math.PI / 2);
+                const finMesh = new THREE.Mesh(finGeo, motorMat);
+                finMesh.position.set(r, 1.8, 0);
+                movableMachineGroup.add(finMesh);
+            }
+
+            const footGeo = new THREE.BoxGeometry(0.8, 0.3, 3.2);
+            const frontFootMesh = new THREE.Mesh(footGeo, motorMat);
+            frontFootMesh.position.set(0.8, 0.15, 0);
+            frontFootMesh.castShadow = true;
+            movableMachineGroup.add(frontFootMesh);
+
+            const rearFootMesh = new THREE.Mesh(footGeo, motorMat);
+            rearFootMesh.position.set(3.4, 0.15, 0);
+            rearFootMesh.castShadow = true;
+            movableMachineGroup.add(rearFootMesh);
+
+            const shimGeo = new THREE.BoxGeometry(0.82, 0.1, 3.22);
+            const shimMat = new THREE.MeshStandardMaterial({ color: 0xeab308, roughness: 0.3, metalness: 0.6 });
+
+            frontFeetShims = new THREE.Mesh(shimGeo, shimMat);
+            frontFeetShims.position.set(0.8, -0.05, 0);
+            movableMachineGroup.add(frontFeetShims);
+
+            rearFeetShims = new THREE.Mesh(shimGeo, shimMat);
+            rearFeetShims.position.set(3.4, -0.05, 0);
+            movableMachineGroup.add(rearFeetShims);
+
+            const movableShaftGeo = new THREE.CylinderGeometry(0.3, 0.3, 3.5, 24);
+            movableShaftGeo.rotateZ(Math.PI / 2);
+            const movableShaftMesh = new THREE.Mesh(movableShaftGeo, shaftMat);
+            movableShaftMesh.position.set(-0.5, 1.8, 0);
+            movableShaftMesh.castShadow = true;
+            movableMachineGroup.add(movableShaftMesh);
+
+            const movableCoplGeo = new THREE.CylinderGeometry(0.9, 0.9, 0.6, 32);
+            movableCoplGeo.rotateZ(Math.PI / 2);
+            const movableCoplMesh = new THREE.Mesh(movableCoplGeo, coplMat);
+            movableCoplMesh.position.set(-2.1, 1.8, 0);
+            movableCoplMesh.castShadow = true;
+            movableMachineGroup.add(movableCoplMesh);
+
+            scene.add(movableMachineGroup);
+
+            // -------------------------------------------------------------
+            // 3. ГРУППА СТРЕЛОК КОРРЕКЦИИ
+            // -------------------------------------------------------------
+            arrowGroup = new THREE.Group();
+            arrowGroup.renderOrder = 998;
+            scene.add(arrowGroup);
+
+            frontVertArrow  = make3DArrow(0xdc2626);
+            rearVertArrow   = make3DArrow(0xdc2626);
+            frontHorizArrow = make3DArrow(0x7c3aed);
+            rearHorizArrow  = make3DArrow(0x7c3aed);
+
+            arrowGroup.add(frontVertArrow);
+            arrowGroup.add(rearVertArrow);
+            arrowGroup.add(frontHorizArrow);
+            arrowGroup.add(rearHorizArrow);
+
+            frontVertLabel  = makeTextSprite(); frontVertLabel.visible  = false;
+            rearVertLabel   = makeTextSprite(); rearVertLabel.visible   = false;
+            frontHorizLabel = makeTextSprite(); frontHorizLabel.visible = false;
+            rearHorizLabel  = makeTextSprite(); rearHorizLabel.visible  = false;
+
+            arrowGroup.add(frontVertLabel);
+            arrowGroup.add(rearVertLabel);
+            arrowGroup.add(frontHorizLabel);
+            arrowGroup.add(rearHorizLabel);
+
+            // -------------------------------------------------------------
+            // 4. ОСИ ВАЛОВ
+            // -------------------------------------------------------------
+            const axisLineMatFixed = new THREE.LineDashedMaterial({ color: 0x22c55e, dashSize: 0.4, gapSize: 0.2, linewidth: 2 });
+            const axisGeoFixed = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-8, 2.2, 0),
+                new THREE.Vector3(8, 2.2, 0)
+            ]);
+            shaftAxisFixed = new THREE.Line(axisGeoFixed, axisLineMatFixed);
+            shaftAxisFixed.computeLineDistances();
+            scene.add(shaftAxisFixed);
+
+            const axisLineMatMov = new THREE.LineBasicMaterial({ color: 0xef4444, linewidth: 3 });
+            const axisGeoMov = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(-2.5, 0, 0),
+                new THREE.Vector3(4.5, 0, 0)
+            ]);
+            shaftAxisMovable = new THREE.Line(axisGeoMov, axisLineMatMov);
+            movableMachineGroup.add(shaftAxisMovable);
+
+            animate3D();
+            window.update3DScene();
+        }
+
+        function animate3D() {
+            requestAnimationFrame(animate3D);
+            if (controls) controls.update();
+
+            if (is3DRotating && movableMachineGroup && fixedMachineGroup) {
+                fixedMachineGroup.children.forEach(c => {
+                    if (c.geometry && c.geometry.type.includes('Cylinder') && c.position.x > 0) {
+                        c.rotation.x += 0.05;
+                    }
+                });
+                movableMachineGroup.children.forEach(c => {
+                    if (c.geometry && c.geometry.type.includes('Cylinder') && c.position.x < 0) {
+                        c.rotation.x += 0.05;
+                    }
+                });
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // -----------------------------------------------------------------
+        // Обновление всей 3D-сцены
+        // -----------------------------------------------------------------
+        window.update3DScene = function() {
+            if (!movableMachineGroup) return;
+
+            const results = window.calcResults || { vertFront:0, vertRear:0, horizFront:0, horizRear:0, angleDev:0 };
+
+            let vf = results.vertFront;
+            let vr = results.vertRear;
+            let hf = results.horizFront;
+            let hr = results.horizRear;
+
+            if (is3DModeCorrected) {
+                vf = 0; vr = 0; hf = 0; hr = 0;
+            } else {
+                // «До коррекции»: вертикаль зеркалим (показываем текущее рассогласование)
+                vf = -vf;
+                vr = -vr;
+            }
+
+            readoutFrontVert.textContent = `${vf > 0 ? '+' : ''}${vf.toFixed(2)} мм`;
+            readoutFrontVert.className = `stat-val ${vf === 0 ? '' : (vf > 0 ? 'pos' : 'neg')}`;
+
+            readoutRearVert.textContent = `${vr > 0 ? '+' : ''}${vr.toFixed(2)} мм`;
+            readoutRearVert.className = `stat-val ${vr === 0 ? '' : (vr > 0 ? 'pos' : 'neg')}`;
+
+            readoutFrontHoriz.textContent = `${hf > 0 ? '+' : ''}${hf.toFixed(2)} мм`;
+            readoutFrontHoriz.className = `stat-val ${hf === 0 ? '' : (hf > 0 ? 'pos' : 'neg')}`;
+
+            readoutRearHoriz.textContent = `${hr > 0 ? '+' : ''}${hr.toFixed(2)} мм`;
+            readoutRearHoriz.className = `stat-val ${hr === 0 ? '' : (hr > 0 ? 'pos' : 'neg')}`;
+
+            readoutAngleDev.textContent = `${(results.angleDev || 0).toFixed(2)}°`;
+
+            const scale = scaleExaggeration * 0.15;
+
+            const avgY = ((vf + vr) / 2) * scale;
+            const avgZ = ((hf + hr) / 2) * scale;
+
+            const pitchAngle = Math.atan2((vr - vf) * scale, 3.0);
+            const yawAngle = Math.atan2((hr - hf) * scale, 3.0);
+
+            movableMachineGroup.position.y = 0.4 + avgY;
+            movableMachineGroup.position.z = avgZ;
+
+            movableMachineGroup.rotation.z = pitchAngle;
+            movableMachineGroup.rotation.y = -yawAngle;
+
+            if (frontFeetShims) {
+                const sY = Math.max(0.02, 0.1 + (vf * scale * 0.5));
+                frontFeetShims.scale.set(1, sY / 0.1, 1);
+            }
+            if (rearFeetShims) {
+                const sY = Math.max(0.02, 0.1 + (vr * scale * 0.5));
+                rearFeetShims.scale.set(1, sY / 0.1, 1);
+            }
+
+            if (arrowGroup) {
+                arrowGroup.position.copy(movableMachineGroup.position);
+            }
+
+            // ========== ОБНОВЛЕНИЕ 3D-СТРЕЛОК И МЕТОК ==========
+            if (is3DModeCorrected) {
+                if (frontVertArrow) frontVertArrow.visible = false;
+                if (rearVertArrow)  rearVertArrow.visible  = false;
+                if (frontHorizArrow) frontHorizArrow.visible = false;
+                if (rearHorizArrow)  rearHorizArrow.visible  = false;
+                if (frontVertLabel) frontVertLabel.visible = false;
+                if (rearVertLabel)  rearVertLabel.visible  = false;
+                if (frontHorizLabel) frontHorizLabel.visible = false;
+                if (rearHorizLabel)  rearHorizLabel.visible  = false;
+            } else {
+                // ---------- КРАСНЫЕ (вертикальные) — НАД ДВИГАТЕЛЕМ ----------
+                const FRONT_FOOT_X = 0.8;
+                const REAR_FOOT_X  = 3.4;
+                const ABOVE_MOTOR_Y = 4.3;
+
+                const vertFrontOrigin = new THREE.Vector3(FRONT_FOOT_X, ABOVE_MOTOR_Y, 0);
+                const vertRearOrigin  = new THREE.Vector3(REAR_FOOT_X,  ABOVE_MOTOR_Y, 0);
+
+                updateArrow(
+                    frontVertArrow, vertFrontOrigin,
+                    results.vertFront, true,
+                    frontVertLabel
+                );
+                updateArrow(
+                    rearVertArrow, vertRearOrigin,
+                    results.vertRear, true,
+                    rearVertLabel
+                );
+
+                // ---------- ФИОЛЕТОВЫЕ (горизонтальные) ----------
+                // Согласовано с видом сверху на HTML-схеме:
+                //   value > 0 → сторона −Z (совпадает с «вверх» на диаграмме),
+                //              стрелка направлена в −Z
+                //   value < 0 → сторона +Z, стрелка направлена в +Z
+                const FRONT_X = 0.8;
+                const REAR_X  = 3.4;
+                const SIDE_Z  = 3.0;
+
+                const hfVal = results.horizFront;
+                if (Math.abs(hfVal) >= 0.005) {
+                    const sideZ = hfVal > 0 ? -SIDE_Z : SIDE_Z;
+                    const frontHorizOrigin = new THREE.Vector3(FRONT_X, 0.55, sideZ);
+                    updateArrow(
+                        frontHorizArrow, frontHorizOrigin,
+                        hfVal, false,
+                        frontHorizLabel
+                    );
+                } else {
+                    if (frontHorizArrow) frontHorizArrow.visible = false;
+                    if (frontHorizLabel) frontHorizLabel.visible = false;
+                }
+
+                const hrVal = results.horizRear;
+                if (Math.abs(hrVal) >= 0.005) {
+                    const sideZ = hrVal > 0 ? -SIDE_Z : SIDE_Z;
+                    const rearHorizOrigin = new THREE.Vector3(REAR_X, 0.55, sideZ);
+                    updateArrow(
+                        rearHorizArrow, rearHorizOrigin,
+                        hrVal, false,
+                        rearHorizLabel
+                    );
+                } else {
+                    if (rearHorizArrow) rearHorizArrow.visible = false;
+                    if (rearHorizLabel) rearHorizLabel.visible = false;
+                }
+            }
+        };
+
+        window.set3DMode = function(mode) {
+            is3DModeCorrected = (mode === 'corrected');
+            document.getElementById('btnModeMeasured').classList.toggle('active', !is3DModeCorrected);
+            document.getElementById('btnModeCorrected').classList.toggle('active', is3DModeCorrected);
+            window.update3DScene();
+        };
+
+        window.toggle3DRotation = function() {
+            is3DRotating = !is3DRotating;
+            const btn = document.getElementById('btnAnimToggle');
+            btn.textContent = is3DRotating ? '⏸️ Пауза' : '▶️ Вращение';
+            btn.classList.toggle('btn-action', !is3DRotating);
+            btn.classList.toggle('btn-danger', is3DRotating);
+        };
+
+        window.update3DScale = function(val) {
+            scaleExaggeration = parseFloat(val);
+            scaleValDisplay.textContent = `${scaleExaggeration}×`;
+            window.update3DScene();
+        };
+
+        window.reset3DCamera = function() {
+            if (!camera || !controls) return;
+            camera.position.set(12, 8, 16);
+            controls.target.set(2, 1.5, 0);
+            controls.update();
+        };
+
+        window.set3DCameraPreset = function(preset) {
+            if (!camera || !controls) return;
+            if (preset === 'iso') {
+                camera.position.set(12, 8, 16);
+            } else if (preset === 'side') {
+                camera.position.set(2, 2, 20);
+            } else if (preset === 'top') {
+                camera.position.set(2, 22, 0.1);
+            }
+            controls.target.set(2, 1.5, 0);
+            controls.update();
+        };
+
+        window.update3DTheme = function(isDark) {
+            if (scene) {
+                scene.background = new THREE.Color(isDark ? 0x0f1a2b : 0xeef4fc);
+            }
+        };
+
+        window.addEventListener('resize', () => {
+            if (!renderer || !camera || !container) return;
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        window.addEventListener('load', () => {
+            setTimeout(init3D, 100);
+        });
+    })();
+</script>
+</body>
+</html>
